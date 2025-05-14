@@ -5,6 +5,7 @@ import json
 class PlantWiki:
     USER_AGENT = "PlantLookup/0.1 (https://jeffcullis.github.io jeffcullis@gmail.com)"
     WIKI_IMAGE_REQUEST = 'http://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=original&titles='
+    NAME_DICT = {'Iris': 'Iris (plant)'}
 
     def __init__(self):
         self._headers = {'User-Agent': self.USER_AGENT}
@@ -12,6 +13,10 @@ class PlantWiki:
 
     def _get_page(self, page_title):
         # Get the Wikipedia page
+        # Check if the page title is in the NAME_DICT and use the mapped name if it is
+        if page_title in self.NAME_DICT:
+            page_title = self.NAME_DICT[page_title]
+        # Use the Wikipedia API to fetch the page
         page = self._wiki_api.page(page_title)
         if not page.exists():
             #raise ValueError(f"Wikipedia page '{page_title}' does not exist.")

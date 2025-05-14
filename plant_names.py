@@ -25,7 +25,7 @@ class PlantNames:
         if not os.path.exists(self.uniprot_file):
             response = requests.get(self.UNIPROT_URL)
             if response.status_code == 200:
-                with open(self.uniprot_file, "w") as file:
+                with open(self.uniprot_file, "wb") as file:
                     file.write(response.content)
                 print(f"File downloaded successfully to {self.uniprot_file}")
             else:
@@ -51,7 +51,7 @@ class PlantNames:
                     if not n_found:
                         raise ValueError(f"N= value not found before C= value in line: {line}")
                     self._common_names[n_value] = c_value
-                    n_found = False
+                    n_found = False                       
 
     def get_common_name(self, scientific_name):
         if self._common_names.get(scientific_name):

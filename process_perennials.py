@@ -11,6 +11,33 @@ PERENNIALS_INFO_FILE = "./data/perennials_info.csv"
 plant_names = PlantNames()
 plant_wiki = PlantWiki()
 
+def guess_scientific_name(full_name):
+    name_words = full_name.strip().split()
+    name_options = []
+    if len(name_words) > 0:
+        name_options.append(name_words[0])
+    
+    if len(name_words) > 1:
+        name_options.append(' '.join(name_words[:2]))
+
+    if len(name_words) > 2:
+        if name_words[1].lower() == 'x':
+            name_options.append(' '.join([name_words[0], name_words[2]]))
+            name_options.append(' '.join(name_words[:3]))
+
+    print(name_options)
+    # Reverse name options order to try the longest (most specific) name first
+    for name in reversed(name_options):
+        pn_name = plant_names.get_common_name(name)
+        pw_desc, pw_img = plant_wiki.get_wiki_data(name)
+        if pn_name or pw_desc:
+            return name
+    
+    if len(name_options) > 0:
+        return name_options[0]
+    else:
+        return ''
+
 def main():
     parser = argparse.ArgumentParser(
         description="Process perennial plant names and map to common names."
@@ -18,7 +45,6 @@ def main():
     parser.add_argument(
         "-i", "--input_perennials",
         type=str,
-        required=True,
         default=PERENNIALS_LIST_FILE,
         help="Path to the input text file containing perennial scientific names (one per line)."
     )
@@ -33,6 +59,8 @@ def main():
     print(f"Input file: {args.input_perennials}")
     print(f"Output file: {args.output_csv}")
 
+    perennials_list = []
+    # Read the list of perennials from the input file
     with open(args.input_perennials, 'r') as list_file:
         perennials_list = list_file.readlines()
 
@@ -42,11 +70,12 @@ def main():
     with open(args.output_csv, "w", newline='', encoding='utf-8') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        for perennial_name in perennials_list:
-            scientific_name = " ".join(line.strip().split()[:2])
+        for perennial_line in perennials_list:
+            full_name = perennial_line.strip()
+            scientific_name = guess_scientific_name(full_name)
             common_name = plant_names.get_common_name(scientific_name)
-            description, image_url = plant_wiki.get_info(scientific_name)
-            row = {"full_name": perennial_name, "scientific_name": scientific_name
+            description, image_url = plant_wiki.get_wiki_data(scientific_name)
+            row = {"full_name": full_name, "scientific_name": scientific_name
                    , "common_name": common_name, "description": description, "image_url": image_url}
             # Write the row to the CSV file
             writer.writerow(row)
@@ -54,17 +83,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-
-
-with open(PERENNIALS_INFO_FILE, 'w') as info_file:
-    for line in perennials_list:
-        # Take the first two words as the scientific name
-        scientific_name = " ".join(line.strip().split()[:2])
-        print(f"Processing: {scientific_name}")
-        common_name = plant_names.get_common_name(scientific_name)
-        if common_name:
-            description, image_url = plant_wiki.get_info(scientific_name)
-            info_file.write(f"{scientific_name}\t{common_name}\t{description}\t{image_url}\n")
-        else:
-            print(f"No common name found for {scientific_name}")
 
